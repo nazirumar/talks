@@ -1,0 +1,69 @@
+<div id="chat-controls">
+    <button id="start-call" onclick="startCall()">Start Call</button>
+    <button id="end-call" onclick="endCall()" style="display:none;">End Call</button>
+</div>
+
+<div id="call-notification" style="display:none;">
+    <p id="incoming-call-text"></p>
+    <button id="accept-call" onclick="acceptCall()">Accept</button>
+    <button id="decline-call" onclick="declineCall()">Decline</button>
+</div>
+
+<script>
+    function startCall() {
+        const receiver = prompt("Enter the username of the person you want to call:");
+        chatSocket.send(JSON.stringify({
+            'event': 'start_call',
+            'receiver': receiver
+        }));
+        document.getElementById('start-call').style.display = 'none';
+        document.getElementById('end-call').style.display = 'block';
+    }
+
+    function endCall() {
+        chatSocket.send(JSON.stringify({
+            'event': 'end_call'
+        }));
+        document.getElementById('start-call').style.display = 'block';
+        document.getElementById('end-call').style.display = 'none';
+    }
+
+    function acceptCall() {
+        chatSocket.send(JSON.stringify({
+            'event': 'accept_call'
+        }));
+        document.getElementById('call-notification').style.display = 'none';
+        document.getElementById('end-call').style.display = 'block';
+    }
+
+    function declineCall() {
+        chatSocket.send(JSON.stringify({
+            'event': 'decline_call'
+        }));
+        document.getElementById('call-notification').style.display = 'none';
+        document.getElementById('start-call').style.display = 'block';
+    }
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (data.event === 'call_notification') {
+            document.getElementById('incoming-call-text').innerText = `${data.caller} is calling you`;
+            document.getElementById('call-notification').style.display = 'block';
+        } else if (data.event === 'call_accepted') {
+            alert(`Call accepted with ${data.receiver}`);
+            // Start WebRTC or other call handling here
+        } else if (data.event === 'call_declined') {
+            alert(`Call declined by ${data.receiver}`);
+            document.getElementById('end-call').style.display = 'none';
+            document.getElementById('start-call').style.display = 'block';
+        } else if (data.event === 'end_call') {
+            alert('Call ended');
+            document.getElementById('end-call').style.display = 'none';
+            document.getElementById('start-call').style.display = 'block';
+        } else if (data.message) {
+            // Handle chat messages
+            console.log(`${data.sender}: ${data.message}`);
+        }
+    };
+</script>

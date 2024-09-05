@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+<h1>Chat Rooms</h1>
+
+{% block content %}
+<ul>
+    <h2>Active Rooms</h2>
+    <a href="{% url 'start_one_to_one_call' invitee_id=1 %}">Start Call with User 1</a>
+
+    {% for room in rooms %}
+        <li><a href="{% url 'room' room_name=room.name %}">{{ room.name }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock content %}
+

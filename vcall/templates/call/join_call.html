@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Call</title>
+</head>
+<body>
+    <h1>Join Call</h1>
+    <p>You have joined the call with ID: {{ call.call_id }}</p>
+    
+    <video id="local-video" autoplay muted></video>
+    <video id="remote-video" autoplay></video>
+    
+    <script>
+        const callId = "{{ call.call_id }}";
+        const signalingSocket = new WebSocket('ws://' + window.location.host + '/ws/call/' + callId + '/');
+        
+        let localStream;
+        let peerConnection;
+        const configuration = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        // Function to start the call
+        async function startCall() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+
+                peerConnection = new RTCPeerConnection(configuration);
+
+                // Add local stream to the peer connection
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Handle incoming ICE candidates
+                peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        signalingSocket.send(JSON.stringify({
+                            type: 'candidate',
+                            candidate: event.candidate
+                        }));
+                    }
+                };
+
+                // Handle incoming media stream
+                peerConnection.ontrack = event => {
+                    document.getElementById('remote-video').srcObject = event.streams[0];
+                };
+
+                signalingSocket.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'offer') {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+                        signalingSocket.send(JSON.stringify({ type: 'answer', answer }));
+                    } else if (data.type === 'answer') {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    } else if (data.type === 'candidate') {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    }
+                };
+            } catch (err) {
+                console.error('Error accessing media devices.', err);
+            }
+        }
+
+        startCall();
+    </script>
+</body>
+</html>

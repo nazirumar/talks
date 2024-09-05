@@ -1,0 +1,27 @@
+<h2>Call Room: {{ room_name }}</h2>
+<p>Currently in a call with {{ call.receiver.username }}</p>
+
+<div id="call-controls">
+    <button id="end-call" onclick="endCall()">End Call</button>
+</div>
+
+<script>
+    const roomName = "{{ room_name }}";
+    const callSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+    );
+
+    function endCall() {
+        callSocket.send(JSON.stringify({
+            'event': 'end_call'
+        }));
+    }
+
+    callSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.event === 'end_call') {
+            alert('Call ended');
+            window.location.href = '{% url "chat_view" room_name=room_name %}';
+        }
+    };
+</script>

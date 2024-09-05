@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+<h1>Chat Rooms</h1>
+
+{% block content %}
+<ul>
+    <h2>{{request.user.username}}</h2>
+    
+    {% for user in users %}
+    <div>
+        <a href="{% url 'private_chat' user.username %}">Start Call with {{user.username}}</a>
+
+    </div>
+    {% endfor %}
+</ul>
+{% endblock content %}
+

@@ -1,0 +1,6 @@
+<h2>Start a Call with {{ receiver.username }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirm Call</button>
+    <a href="{% url 'chat_view' room_name='chat_'|add:request.user.username|add:'_'|add:receiver.username %}">Cancel</a>
+</form>
